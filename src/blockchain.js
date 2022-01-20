@@ -60,16 +60,25 @@ class Blockchain {
      * to update the `this.height`
      */
     async #addBlock(block) {
+        const validationErrors = await this.validateChain()
+        if (validationErrors.length) {
+            throw Error(`Chain is invalid. ${validationErrors.join('\n')}`)
+        }
+        
         this.height++
 
-        block.time = new Date().getTime()
-        block.height = this.chain.length
-        block.hash = block.generateHash()
-        block.previousBlockHash = this.#getPreviousBlockHash()
+        this.#setBlockValues(block)
 
         this.chain.push(block)
 
         return block
+    }
+
+    #setBlockValues(block) {
+        block.time = new Date().getTime()
+        block.height = this.chain.length
+        block.hash = block.generateHash()
+        block.previousBlockHash = this.#getPreviousBlockHash()
     }
 
     #getPreviousBlockHash() {
@@ -168,15 +177,20 @@ class Blockchain {
      * 2. Each Block should check the with the previousBlockHash
      */
     async validateChain() {
-        return this.chain.every((block, i) => {
-            if (i === 0) {
-                return true
+        const validationErrors = []
+        this.chain.forEach((block, index) => {
+            if (index === 0) {
+                return
             }
 
-            const previousBlock = this.chain[i - 1]
+            const previousBlock = this.chain[index - 1]
             const previousBlockHashMatches = block.previousBlockHash === previousBlock.hash
-            return previousBlockHashMatches && block.validateBlock()
+            const isValid = previousBlockHashMatches && block.validate()
+            if (!isValid) {
+                validationErrors.push(`Block ${block.height} is invalid`)
+            }
         })
+        return validationErrors
     }
 
 }

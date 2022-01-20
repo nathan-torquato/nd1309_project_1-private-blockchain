@@ -42,7 +42,7 @@ class Block {
     }
 
     generateHash() {
-        const blockData = JSON.stringify(this.body)
+        const blockData = JSON.stringify(this)
         return SHA256(blockData).toString()
     }
 
